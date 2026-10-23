@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: profile-service
+  datasource:
+    # Neon: jdbc:postgresql://ep-hidden-art-b7i3c5sy-pooler.c-13.us-east-1.aws.neon.tech/ProfileService?sslmode=require  (its own database, never AuthService)
+    url: jdbc:postgresql://ep-hidden-art-b7i3c5sy-pooler.c-13.us-east-1.aws.neon.tech/ProfileService?sslmode=require
+    username: neondb_owner
+    password: npg_sQ3K7SROLHdy
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+
+profile:
+  upload-dir: ${PROFILE_UPLOAD_DIR:./uploads/avatars}
