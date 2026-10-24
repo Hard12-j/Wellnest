@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forest-50: #f0fdf4;
+  --color-forest-100: #dcfce7;
+  --color-forest-200: #bbf7d0;
+  --color-forest-300: #86efac;
+  --color-forest-400: #4ade80;
+  --color-forest-500: #22c55e;
+  --color-forest-600: #16a34a;
+  --color-forest-700: #15803d;
+  --color-forest-800: #166534;
+  --color-forest-900: #14532d;
+  --color-forest-950: #052e16;
+
+  --color-mint-50: #f0fdfa;
+  --color-mint-100: #ccfbf1;
+  --color-mint-200: #99f6e4;
+  --color-mint-300: #5eead4;
+  --color-mint-400: #2dd4bf;
+  --color-mint-500: #14b8a6;
+
+  --color-sand-50: #faf9f7;
+  --color-sand-100: #f5f3f0;
+  --color-sand-200: #e8e4de;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply w-full py-3 px-6 bg-forest-600 hover:bg-forest-700 text-white font-semibold rounded-xl
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-forest-600
+           active:scale-[0.98] shadow-md hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply w-full py-3 px-6 bg-white border-2 border-forest-200 text-forest-700 font-semibold rounded-xl
+           transition-all duration-200 ease-out hover:bg-forest-50 hover:border-forest-300
+           focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2
+           active:scale-[0.98];
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800
+           placeholder-gray-400 transition-all duration-200
+           focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20
+           hover:border-gray-300;
+  }
+
+  .input-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-500/20;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-100;
+  }
+
+  .link {
+    @apply text-forest-600 hover:text-forest-700 font-medium transition-colors duration-200
+           underline-offset-2 hover:underline focus:outline-none focus:ring-2
+           focus:ring-forest-500 focus:ring-offset-2 rounded-sm;
+  }
+
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl;
+  }
+}
+
+/* OTP Input Styles */
+.otp-input {
+  @apply w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl
+         transition-all duration-200 bg-white
+         focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20;
+}
+
+.otp-input:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
+}
+
+/* Page transition */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeSlideIn 0.4s ease-out;
+}
+
+/* Floating shapes for wellness panel */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(3deg); }
+}
+
+@keyframes floatReverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(20px) rotate(-3deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 8s ease-in-out infinite;
+}
+
+/* Pulse animation */
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 3s ease-in-out infinite;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply w-5 h-5 border-2 border-white/30 border-t-white rounded-full;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
