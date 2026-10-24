@@ -6,9 +6,9 @@ spring:
     name: tracker-service
   datasource:
     # Neon:   (its own database)
-    url: jdbc:postgresql://ep-hidden-art-b7i3c5sy-pooler.c-13.us-east-1.aws.neon.tech/TrackerService?sslmode=require
-    username: neondb_owner
-    password: npg_sQ3K7SROLHdy
+    url: ${TRACKER_DB_URL}
+    username: ${TRACKER_DB_USER}
+    password: ${TRACKER_DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update

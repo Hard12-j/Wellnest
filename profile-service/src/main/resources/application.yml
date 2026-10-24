@@ -6,9 +6,9 @@ spring:
     name: profile-service
   datasource:
     # Neon: jdbc:postgresql://ep-hidden-art-b7i3c5sy-pooler.c-13.us-east-1.aws.neon.tech/ProfileService?sslmode=require  (its own database, never AuthService)
-    url: jdbc:postgresql://ep-hidden-art-b7i3c5sy-pooler.c-13.us-east-1.aws.neon.tech/ProfileService?sslmode=require
-    username: neondb_owner
-    password: npg_sQ3K7SROLHdy
+    url: ${PROFILE_DB_URL}
+    username: ${PROFILE_DB_USER}
+    password: ${PROFILE_DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
