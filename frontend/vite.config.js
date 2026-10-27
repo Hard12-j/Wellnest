@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const GATEWAY = 'http://localhost:8080'
+const GATEWAY_WS = 'ws://localhost:8080'
+
 export default defineConfig({
   plugins: [
     react(),
@@ -10,32 +13,19 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // Auth endpoints (login, register, refresh, etc.)
       '/auth': {
-        target: 'http://localhost:8081',
+        target: GATEWAY,
         changeOrigin: true,
       },
-      '/api/profile': {
-        target: 'http://localhost:8082',
+      // All API services routed through the gateway
+      '/api': {
+        target: GATEWAY,
         changeOrigin: true,
       },
-      '/api/tracker': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-      },
-      '/api/analytics': {
-        target: 'http://localhost:8084',
-        changeOrigin: true,
-      },
-      '/api/trainers': {
-        target: 'http://localhost:8085',
-        changeOrigin: true,
-      },
-      '/api/chat': {
-        target: 'http://localhost:8088',
-        changeOrigin: true,
-      },
+      // WebSocket (chat-service via gateway)
       '/ws': {
-        target: 'ws://localhost:8088',
+        target: GATEWAY_WS,
         ws: true,
         changeOrigin: true,
       },

@@ -1,12 +1,18 @@
 import axios from 'axios';
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8081';
-const PROFILE_API_URL = import.meta.env.VITE_PROFILE_API_URL || 'http://localhost:8082';
-const TRACKER_API_URL = import.meta.env.VITE_TRACKER_API_URL || 'http://localhost:8083';
-const ANALYTICS_API_URL = import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:8084';
-const TRAINER_API_URL = import.meta.env.VITE_TRAINER_API_URL || 'http://localhost:8085';
-export const CONTENT_API_URL = import.meta.env.VITE_CONTENT_API_URL || 'http://localhost:8086';
-export const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8088';
+// ── Single Gateway URL ─────────────────────────────────────────────────────────
+// All traffic goes through the API gateway (port 8080).
+// When running locally with Vite, the dev proxy forwards requests to the gateway
+// so GATEWAY_URL can be left empty to use relative paths.
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || '';
+
+// WebSocket base URL used by ChatContext.jsx
+export const CHAT_WS_URL = (() => {
+  if (import.meta.env.VITE_GATEWAY_WS_URL) return import.meta.env.VITE_GATEWAY_WS_URL;
+  // Derive from GATEWAY_URL if available, otherwise use current host (Vite proxy handles it)
+  if (GATEWAY_URL) return GATEWAY_URL.replace(/^http/, 'ws') + '/ws';
+  return ''; // empty = relative ws:// via Vite proxy
+})();
 
 // ── In-memory token & user ID/Role store ──────────────────────────────────────────
 let accessToken = null;
@@ -75,7 +81,7 @@ export const requestRefreshToken = () => {
     return refreshInFlightPromise;
   }
 
-  refreshInFlightPromise = authClient
+  refreshInFlightPromise = gatewayClient
     .post('/auth/refresh')
     .then((res) => {
       const newToken = res.data?.accessToken;
@@ -120,23 +126,29 @@ const isPublicPath = (url) => PUBLIC_PATHS.some((path) => url?.includes(path));
 
 /**
  * Configure request and response interceptors on an Axios instance.
+ * @param {import('axios').AxiosInstance} client
+ * @param {boolean} isAuthService - if true, don't add X-User-Id/X-User-Role headers
  */
 function setupInterceptors(client, isAuthService = false) {
-  // Request interceptor: attach bearer token, X-User-Id, and X-UserRole
+  // Request interceptor: attach bearer token
   client.interceptors.request.use(
     (config) => {
       const token = getAccessToken();
       if (token && !isPublicPath(config.url)) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      const userId = getAuthUserId();
-      if (userId) {
-        config.headers['X-User-Id'] = userId;
-      }
-      const role = getAuthUserRole();
-      if (role) {
-        config.headers['X-UserRole'] = role;
-        config.headers['X-User-Role'] = role;
+      // The gateway will add X-User-Id and X-User-Role from the JWT.
+      // We still send them for Vite dev proxy / direct fallback compatibility.
+      if (!isAuthService) {
+        const userId = getAuthUserId();
+        if (userId) {
+          config.headers['X-User-Id'] = userId;
+        }
+        const role = getAuthUserRole();
+        if (role) {
+          config.headers['X-UserRole'] = role;
+          config.headers['X-User-Role'] = role;
+        }
       }
       return config;
     },
@@ -188,55 +200,41 @@ function setupInterceptors(client, isAuthService = false) {
   );
 }
 
-// ── Service Axios Instances ──────────────────────────────────────────
+// ── Single unified Axios instance pointing at the gateway ──────────────────────
+// All service clients are now aliases of the same gatewayClient.
+// The path prefix (e.g. /api/profile, /api/tracker) determines routing at the gateway.
 
+export const gatewayClient = axios.create({
+  baseURL: GATEWAY_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // required for refresh token cookie
+});
+setupInterceptors(gatewayClient, false);
+
+// Auth client: same gateway, but doesn't add X-User-Id to avoid circular issues
 export const authClient = axios.create({
-  baseURL: AUTH_API_URL,
+  baseURL: GATEWAY_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
 setupInterceptors(authClient, true);
 
-export const profileClient = axios.create({
-  baseURL: PROFILE_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
-setupInterceptors(profileClient);
+// All other service clients are the same gateway client — they differ only by URL prefix
+export const profileClient = gatewayClient;
+export const trackerClient = gatewayClient;
+export const analyticsClient = gatewayClient;
+export const trainerClient = gatewayClient;
+export const chatClient = gatewayClient;
 
-export const trackerClient = axios.create({
-  baseURL: TRACKER_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
-setupInterceptors(trackerClient);
-
-export const analyticsClient = axios.create({
-  baseURL: ANALYTICS_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
-setupInterceptors(analyticsClient);
-
-export const trainerClient = axios.create({
-  baseURL: TRAINER_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
-setupInterceptors(trainerClient);
-
+// Content client – same gateway, may send multipart
 export const contentClient = axios.create({
-  baseURL: CONTENT_API_URL,
+  baseURL: GATEWAY_URL,
   withCredentials: true,
 });
-setupInterceptors(contentClient);
+setupInterceptors(contentClient, false);
 
-export const chatClient = axios.create({
-  baseURL: CHAT_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
-setupInterceptors(chatClient);
+// Keep CONTENT_API_URL as an export for any files that reference it
+export const CONTENT_API_URL = GATEWAY_URL;
 
 // Default export is authClient for backwards compatibility
 export default authClient;
