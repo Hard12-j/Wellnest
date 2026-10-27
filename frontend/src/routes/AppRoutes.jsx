@@ -12,6 +12,7 @@ import Tracker from '../pages/Tracker';
 import Analytics from '../pages/Analytics';
 import Trainers from '../pages/Trainers';
 import Community from '../pages/Community';
+import Chat from '../pages/Chat';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
@@ -103,6 +104,17 @@ const AppRoutes = () => {
         }
       />
 
+
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Chat />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

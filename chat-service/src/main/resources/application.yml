@@ -1,0 +1,32 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: chat-service
+  datasource:
+    # Create a new Neon database named ChatService (one database per service)
+    url: ${CHAT_DB_URL}
+    username: ${CHAT_DB_USER}
+    password: ${CHAT_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:192.168.1.10:9094}
+    consumer:
+      group-id: chat-service
+      auto-offset-reset: earliest
+
+jwt:
+  # must be the same secret auth-service signs with (HS256, claims: uid, role)
+  secret: ${JWT_SECRET}
+
+chat:
+  trainer-topic: trainer.events     # consumed: TrainerMatched
+  events-topic: chat.events         # published: MessageReceived
+  # true  = send MessageReceived only for the first unread message of a burst (avoids an email per message)
+  # false = send it for every message sent to an offline recipient
+  notify-only-first-unread: true
+  max-message-length: 2000

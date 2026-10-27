@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
+  MessageSquare,
   Search,
   Sparkles,
   ShieldCheck,
@@ -43,6 +45,7 @@ const SPECIALIZATION_OPTIONS = [
 ];
 
 const Trainers = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   // Active navigation tab: 'recommended' | 'browse' | 'my-coaching'
@@ -278,6 +281,15 @@ const Trainers = () => {
               <p className="text-[11px] text-forest-200/80">
                 {myPlans.length > 0 ? `${myPlans.length} assigned plans` : 'Explore trainers below'}
               </p>
+              {hasActiveCoach && acceptedRequest && (
+                <button
+                  onClick={() => navigate(`/chat?trainerId=${acceptedRequest.trainerId}`)}
+                  className="mt-2.5 px-3 py-1.5 bg-white hover:bg-forest-50 text-forest-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-forest-600" />
+                  Chat with Coach
+                </button>
+              )}
             </div>
           </div>
         </div>
