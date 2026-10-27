@@ -1,0 +1,24 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: trainer-service
+  datasource:
+    # Create a new Neon database named TrainerService (one database per service)
+    url: ${TRAINER_DB_URL}
+    username: ${TRAINER_DB_USER}
+    password: ${TRAINER_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:192.168.1.10:9094}
+    consumer:
+      group-id: trainer-service
+      auto-offset-reset: earliest
+
+trainer:
+  profile-topic: profile.events
+  events-topic: trainer.events

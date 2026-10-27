@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as authApi from '../api/authApi';
-import { clearAccessToken } from '../api/axiosInstance';
+import { clearAccessToken, setAuthUserId } from '../api/axiosInstance';
 
 const AuthContext = createContext(null);
 
@@ -27,12 +27,14 @@ export const AuthProvider = ({ children }) => {
         const authData = await authApi.refreshToken();
         if (mounted && authData?.user) {
           setUser(authData.user);
+          setAuthUserId(authData.user.id);
           setIsAuthenticated(true);
         }
       } catch {
         // No valid session — that's fine
         if (mounted) {
           clearAccessToken();
+          setAuthUserId(null);
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -53,6 +55,7 @@ export const AuthProvider = ({ children }) => {
   const loginUser = useCallback(async ({ username, password }) => {
     const data = await authApi.login({ username, password });
     setUser(data.user);
+    setAuthUserId(data.user?.id);
     setIsAuthenticated(true);
     return data;
   }, []);
@@ -64,12 +67,14 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       clearAccessToken();
+      setAuthUserId(null);
     }
   }, []);
 
   const fetchCurrentUser = useCallback(async () => {
     const userData = await authApi.getCurrentUser();
     setUser(userData);
+    setAuthUserId(userData?.id);
     setIsAuthenticated(true);
     return userData;
   }, []);
