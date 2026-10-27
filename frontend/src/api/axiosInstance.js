@@ -6,6 +6,7 @@ const TRACKER_API_URL = import.meta.env.VITE_TRACKER_API_URL || 'http://localhos
 const ANALYTICS_API_URL = import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:8084';
 const TRAINER_API_URL = import.meta.env.VITE_TRAINER_API_URL || 'http://localhost:8085';
 export const CONTENT_API_URL = import.meta.env.VITE_CONTENT_API_URL || 'http://localhost:8086';
+export const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8088';
 
 // ── In-memory token & user ID/Role store ──────────────────────────────────────────
 let accessToken = null;
@@ -229,6 +230,13 @@ export const contentClient = axios.create({
   withCredentials: true,
 });
 setupInterceptors(contentClient);
+
+export const chatClient = axios.create({
+  baseURL: CHAT_API_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+});
+setupInterceptors(chatClient);
 
 // Default export is authClient for backwards compatibility
 export default authClient;

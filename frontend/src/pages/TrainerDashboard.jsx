@@ -27,6 +27,7 @@ import {
   Moon,
   Dumbbell,
   Sliders,
+  MessageSquare,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -505,41 +506,56 @@ const TrainerDashboard = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center gap-2">
-                      <button
-                        onClick={() => setSelectedClientForAnalytics(client)}
-                        className="py-2 px-2.5 rounded-xl bg-forest-50 hover:bg-forest-100 text-forest-800 font-bold text-xs flex items-center justify-center gap-1 border border-forest-200/80 transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
-                        title="View client activity, workouts, and health analytics"
-                      >
-                        <BarChart3 className="w-3.5 h-3.5 text-forest-700" />
-                        Analytics
-                      </button>
-                      <button
-                        onClick={() => setSelectedClientForAssignGoal(client)}
-                        className="py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1 border border-emerald-200/80 transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
-                        title="Assign particular goals (e.g. 3L water, 6h sleep)"
-                      >
-                        <Sliders className="w-3.5 h-3.5 text-emerald-700" />
-                        Goals
-                      </button>
-                      <button
-                        onClick={() => handleOpenAssignModal(client.userId)}
-                        className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Plan
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedClientForPlanFilter(String(client.userId));
-                          setActiveTab('plans');
-                        }}
-                        className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-700 font-semibold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer"
-                        title="View assigned plans history"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        History
-                      </button>
+                    <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
+                      {/* Primary Actions: Plan & Chat */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleOpenAssignModal(client.userId)}
+                          className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Plan
+                        </button>
+                        <button
+                          onClick={() => navigate(`/chat?userId=${client.userId}`)}
+                          className="py-2 px-3 rounded-xl bg-forest-600 hover:bg-forest-700 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                          title="Chat with client"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          Chat
+                        </button>
+                      </div>
+
+                      {/* Secondary Client Tools */}
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <button
+                          onClick={() => setSelectedClientForAnalytics(client)}
+                          className="py-1.5 px-2 rounded-lg bg-forest-50 hover:bg-forest-100 text-forest-800 font-semibold text-xs flex items-center justify-center gap-1 border border-forest-200/80 transition-all cursor-pointer truncate"
+                          title="View client activity, workouts, and health analytics"
+                        >
+                          <BarChart3 className="w-3.5 h-3.5 text-forest-700 shrink-0" />
+                          <span className="truncate">Analytics</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedClientForAssignGoal(client)}
+                          className="py-1.5 px-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs flex items-center justify-center gap-1 border border-emerald-200/80 transition-all cursor-pointer truncate"
+                          title="Assign particular goals (e.g. 3L water, 6h sleep)"
+                        >
+                          <Sliders className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          <span className="truncate">Goals</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedClientForPlanFilter(String(client.userId));
+                            setActiveTab('plans');
+                          }}
+                          className="py-1.5 px-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs flex items-center justify-center gap-1 border border-gray-200/80 transition-all cursor-pointer truncate"
+                          title="View assigned plans history"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-gray-600 shrink-0" />
+                          <span className="truncate">History</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
