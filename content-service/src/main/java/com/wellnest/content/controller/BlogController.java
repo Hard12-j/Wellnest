@@ -55,17 +55,21 @@ public class BlogController {
     @PostMapping(value = "/blogs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BlogResponse> createMultipart(
             @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader(value = "X-User-Role", required = false) String roleHeader,
+            @RequestHeader(value = "X-UserRole", required = false) String roleAlt,
             @RequestPart("blog") @Valid BlogRequest blog,
             @RequestPart(value = "image", required = false) MultipartFile image) {
+        String role = (roleHeader != null && !roleHeader.isBlank()) ? roleHeader : (roleAlt != null ? roleAlt : "USER");
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(userId, role, blog, image));
     }
 
     @PostMapping(value = "/blogs", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BlogResponse> createJson(
             @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader(value = "X-User-Role", required = false) String roleHeader,
+            @RequestHeader(value = "X-UserRole", required = false) String roleAlt,
             @RequestBody @Valid BlogRequest blog) {
+        String role = (roleHeader != null && !roleHeader.isBlank()) ? roleHeader : (roleAlt != null ? roleAlt : "USER");
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(userId, role, blog, null));
     }
 

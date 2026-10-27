@@ -5,13 +5,21 @@ import VerifyEmail from '../pages/VerifyEmail';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
 import Dashboard from '../pages/Dashboard';
+import TrainerDashboard from '../pages/TrainerDashboard';
 import Profile from '../pages/Profile';
+import TrainerProfile from '../pages/TrainerProfile';
 import Tracker from '../pages/Tracker';
 import Analytics from '../pages/Analytics';
+import Trainers from '../pages/Trainers';
+import Community from '../pages/Community';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AppLayout from '../components/AppLayout';
+import { useAuth } from '../context/AuthContext';
 
 const AppRoutes = () => {
+  const { user } = useAuth();
+  const isTrainer = user?.role === 'TRAINER';
+
   return (
     <Routes>
       {/* Public Auth Routes */}
@@ -27,27 +35,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tracker"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Tracker />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Analytics />
+              {isTrainer ? <TrainerDashboard /> : <Dashboard />}
             </AppLayout>
           </ProtectedRoute>
         }
@@ -57,11 +45,64 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <Profile />
+              {isTrainer ? <TrainerProfile /> : <Profile />}
             </AppLayout>
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/tracker"
+        element={
+          <ProtectedRoute>
+            {isTrainer ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AppLayout>
+                <Tracker />
+              </AppLayout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            {isTrainer ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AppLayout>
+                <Analytics />
+              </AppLayout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/trainers"
+        element={
+          <ProtectedRoute>
+            {isTrainer ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AppLayout>
+                <Trainers />
+              </AppLayout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/community"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Community />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
 
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

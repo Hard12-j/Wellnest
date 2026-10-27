@@ -18,6 +18,8 @@ import {
   ShieldAlert,
   Loader2,
   Calendar,
+  Users,
+  BookOpen,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -161,6 +163,20 @@ const Dashboard = () => {
         >
           <Scale className="w-3.5 h-3.5 text-purple-600" />
           Update Weight & Metrics
+        </button>
+        <button
+          onClick={() => navigate('/trainers')}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-emerald-50 hover:text-emerald-800 text-gray-700 font-semibold text-xs rounded-xl border border-gray-200/80 shadow-sm transition-all"
+        >
+          <Users className="w-3.5 h-3.5 text-emerald-600" />
+          Find Trainers
+        </button>
+        <button
+          onClick={() => navigate('/community')}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-forest-50 hover:text-forest-700 text-gray-700 font-semibold text-xs rounded-xl border border-gray-200/80 shadow-sm transition-all"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-forest-600" />
+          Community & Tips
         </button>
       </div>
 
@@ -350,6 +366,50 @@ const Dashboard = () => {
               </div>
               <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-amber-600">
                 <span>Log Meal</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* Personal Trainers & Coaches */}
+            <div
+              onClick={() => navigate('/trainers')}
+              className="card p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer border border-gray-100 flex flex-col justify-between"
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform flex-shrink-0">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base mb-1">Personal Coaches & Trainers</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Explore recommended trainers matching your target goal, send booking requests, and
+                    receive customized workout routines and nutrition guidelines.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-emerald-600">
+                <span>Find Trainers</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* Community & Wellness Hub */}
+            <div
+              onClick={() => navigate('/community')}
+              className="card p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer border border-gray-100 flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-forest-50 text-forest-600 group-hover:scale-110 transition-transform mb-4">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-base mb-1">Community & Wellness Hub</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Browse evidence-based fitness guides, nutrition tips, daily wellness habits, and join
+                  the discussion.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-forest-600">
+                <span>Explore Community</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>

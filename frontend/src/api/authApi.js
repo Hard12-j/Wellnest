@@ -1,4 +1,4 @@
-import api, { setAccessToken, clearAccessToken } from './axiosInstance';
+import api, { setAccessToken, clearAccessToken, requestRefreshToken } from './axiosInstance';
 
 /**
  * Extracts a user-friendly error message from an Axios error.
@@ -17,11 +17,13 @@ export const extractErrorMessage = (error) => {
 
   switch (status) {
     case 400:
-      return 'Invalid request. Please check your input.';
+      return data?.message || data?.error || 'Invalid request. Please check your input.';
     case 401:
       return 'Authentication failed. Please log in again.';
     case 403:
       return 'You do not have permission to perform this action.';
+    case 404:
+      return 'Endpoint not found (404). Please restart the analytics-service to load new endpoints.';
     case 409:
       return 'A conflict occurred. The resource may already exist.';
     case 429:
@@ -29,7 +31,7 @@ export const extractErrorMessage = (error) => {
     case 500:
       return 'An internal server error occurred. Please try again later.';
     default:
-      return 'An unexpected error occurred.';
+      return data?.message || data?.error || 'An unexpected error occurred.';
   }
 };
 
@@ -87,11 +89,7 @@ export const resetPassword = async ({ username, otp, newPassword }) => {
 };
 
 export const refreshToken = async () => {
-  const { data } = await api.post('/auth/refresh');
-  if (data.accessToken) {
-    setAccessToken(data.accessToken);
-  }
-  return data; // AuthResponse { accessToken, tokenType, expiresIn, user }
+  return requestRefreshToken();
 };
 
 export const getCurrentUser = async () => {
