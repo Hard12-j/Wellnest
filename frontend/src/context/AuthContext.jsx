@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as authApi from '../api/authApi';
-import { clearAccessToken, setAuthUserId } from '../api/axiosInstance';
+import { clearAccessToken, setAuthUserId, setAuthUserRole } from '../api/axiosInstance';
 
 const AuthContext = createContext(null);
 
@@ -13,8 +13,19 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('wellnest_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return Boolean(localStorage.getItem('wellnest_user') || localStorage.getItem('wellnest_user_id'));
+  });
+
   const [isLoading, setIsLoading] = useState(true); // true while checking session
 
   // Attempt to restore session on mount
@@ -22,19 +33,34 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     const restoreSession = async () => {
+      const storedId = localStorage.getItem('wellnest_user_id');
+      const storedUser = localStorage.getItem('wellnest_user');
+
+      // If user is completely logged out (no stored credentials), skip refresh
+      if (!storedId && !storedUser) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Try to refresh using the HTTP-only cookie
+        // Safe deduplicated refresh call
         const authData = await authApi.refreshToken();
-        if (mounted && authData?.user) {
-          setUser(authData.user);
+        if (authData?.user) {
+          if (mounted) {
+            setUser(authData.user);
+            setIsAuthenticated(true);
+          }
           setAuthUserId(authData.user.id);
-          setIsAuthenticated(true);
+          setAuthUserRole(authData.user.role);
+          localStorage.setItem('wellnest_user', JSON.stringify(authData.user));
         }
       } catch {
-        // No valid session — that's fine
+        // If refresh fails with 401, session is truly expired
         if (mounted) {
           clearAccessToken();
           setAuthUserId(null);
+          setAuthUserRole(null);
+          localStorage.removeItem('wellnest_user');
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -56,6 +82,10 @@ export const AuthProvider = ({ children }) => {
     const data = await authApi.login({ username, password });
     setUser(data.user);
     setAuthUserId(data.user?.id);
+    setAuthUserRole(data.user?.role);
+    if (data.user) {
+      localStorage.setItem('wellnest_user', JSON.stringify(data.user));
+    }
     setIsAuthenticated(true);
     return data;
   }, []);
@@ -68,6 +98,8 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       clearAccessToken();
       setAuthUserId(null);
+      setAuthUserRole(null);
+      localStorage.removeItem('wellnest_user');
     }
   }, []);
 
@@ -75,6 +107,10 @@ export const AuthProvider = ({ children }) => {
     const userData = await authApi.getCurrentUser();
     setUser(userData);
     setAuthUserId(userData?.id);
+    setAuthUserRole(userData?.role);
+    if (userData) {
+      localStorage.setItem('wellnest_user', JSON.stringify(userData));
+    }
     setIsAuthenticated(true);
     return userData;
   }, []);

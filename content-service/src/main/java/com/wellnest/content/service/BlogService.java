@@ -76,14 +76,28 @@ public class BlogService {
     }
 
     public BlogResponse create(Long userId, String role, BlogRequest req, MultipartFile image) {
-        if (!Roles.canWriteBlogs(role)) {
-            throw new ForbiddenException("Only trainers can create blogs");
+        ContentType type = req.contentType();
+        if (type == null) {
+            type = Roles.canWriteArticles(role) ? ContentType.ARTICLE : ContentType.POST;
         }
+
+        if (type == ContentType.ARTICLE) {
+            if (!Roles.canWriteArticles(role)) {
+                throw new ForbiddenException("Only trainers can create articles");
+            }
+        } else {
+            if (!Roles.canWritePosts(role)) {
+                throw new ForbiddenException("Only users and trainers can create posts");
+            }
+        }
+
         Blog blog = new Blog();
         blog.setAuthorId(userId);
         blog.setAuthorType(Roles.normalize(role));
         blog.setAuthorName(req.authorName());
-        applyFields(blog, req, image);
+        blog.setContentType(type);
+        // For short posts, no image is attached
+        applyFields(blog, req, type == ContentType.ARTICLE ? image : null);
         return toResponses(List.of(blogs.save(blog)), userId).get(0);
     }
 

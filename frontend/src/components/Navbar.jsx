@@ -6,6 +6,8 @@ import {
   Activity,
   BarChart3,
   User,
+  Users,
+  BookOpen,
   LogOut,
   Menu,
   X,
@@ -54,12 +56,22 @@ const Navbar = () => {
     }
   };
 
-  const navLinks = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/tracker', label: 'Tracker', icon: Activity },
-    { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { to: '/profile', label: 'Profile', icon: User },
-  ];
+  const isTrainer = user?.role === 'TRAINER';
+
+  const navLinks = isTrainer
+    ? [
+        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/community', label: 'Community', icon: BookOpen },
+        { to: '/profile', label: 'Profile', icon: User },
+      ]
+    : [
+        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/tracker', label: 'Tracker', icon: Activity },
+        { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+        { to: '/trainers', label: 'Trainers', icon: Users },
+        { to: '/community', label: 'Community', icon: BookOpen },
+        { to: '/profile', label: 'Profile', icon: User },
+      ];
 
   const initials = `${user?.first?.[0] || 'U'}${user?.last?.[0] || ''}`.toUpperCase();
 
@@ -77,7 +89,7 @@ const Navbar = () => {
                 Well<span className="text-forest-600">Nest</span>
               </span>
               <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">
-                Health & Wellness
+                {isTrainer ? 'Trainer Portal' : 'Health & Wellness'}
               </span>
             </div>
           </NavLink>
@@ -118,14 +130,25 @@ const Navbar = () => {
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-forest-500/30"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-forest-100 text-forest-700 font-bold text-xs flex items-center justify-center ring-2 ring-forest-500/20">
+                <div className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center ring-2 ${
+                  isTrainer
+                    ? 'bg-emerald-100 text-emerald-800 ring-emerald-500/30'
+                    : 'bg-forest-100 text-forest-700 ring-forest-500/20'
+                }`}>
                   {initials}
                 </div>
               )}
               <div className="text-left">
-                <p className="text-xs font-bold text-gray-800 leading-tight">
-                  {user?.first} {user?.last}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-gray-800 leading-tight">
+                    {user?.first} {user?.last}
+                  </p>
+                  {isTrainer && (
+                    <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-md">
+                      Trainer
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-gray-400 truncate max-w-[120px]">
                   {user?.username}
                 </p>
@@ -169,14 +192,23 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-forest-500"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-forest-200 text-forest-800 font-bold text-sm flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-full font-bold text-sm flex items-center justify-center ${
+                isTrainer ? 'bg-emerald-200 text-emerald-800' : 'bg-forest-200 text-forest-800'
+              }`}>
                 {initials}
               </div>
             )}
             <div>
-              <p className="text-sm font-bold text-gray-800">
-                {user?.first} {user?.last}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-gray-800">
+                  {user?.first} {user?.last}
+                </p>
+                {isTrainer && (
+                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md">
+                    Trainer
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500">{user?.username}</p>
             </div>
           </div>

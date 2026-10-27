@@ -14,7 +14,16 @@ public final class Roles {
         return r.startsWith("ROLE_") ? r.substring(5) : r;
     }
 
-    public static boolean canWriteBlogs(String role) {
+    public static boolean canWriteArticles(String role) {
         return TRAINER.equals(normalize(role));
+    }
+
+    public static boolean canWritePosts(String role) {
+        String normalized = normalize(role);
+        return USER.equals(normalized) || TRAINER.equals(normalized);
+    }
+
+    public static boolean canWriteBlogs(String role) {
+        return canWriteArticles(role);
     }
 }

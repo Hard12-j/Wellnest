@@ -4,10 +4,13 @@ const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8081
 const PROFILE_API_URL = import.meta.env.VITE_PROFILE_API_URL || 'http://localhost:8082';
 const TRACKER_API_URL = import.meta.env.VITE_TRACKER_API_URL || 'http://localhost:8083';
 const ANALYTICS_API_URL = import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:8084';
+const TRAINER_API_URL = import.meta.env.VITE_TRAINER_API_URL || 'http://localhost:8085';
+export const CONTENT_API_URL = import.meta.env.VITE_CONTENT_API_URL || 'http://localhost:8086';
 
-// ── In-memory token & user ID store ──────────────────────────────────────────
+// ── In-memory token & user ID/Role store ──────────────────────────────────────────
 let accessToken = null;
 let currentUserId = null;
+let currentUserRole = null;
 
 export const setAccessToken = (token) => {
   accessToken = token;
@@ -38,9 +41,57 @@ export const getAuthUserId = () => {
   return null;
 };
 
+export const setAuthUserRole = (role) => {
+  currentUserRole = role || null;
+  if (role) {
+    localStorage.setItem('wellnest_user_role', String(role));
+  } else {
+    localStorage.removeItem('wellnest_user_role');
+  }
+};
+
+export const getAuthUserRole = () => {
+  if (currentUserRole) return currentUserRole;
+  const stored = localStorage.getItem('wellnest_user_role');
+  if (stored) {
+    currentUserRole = stored;
+    return currentUserRole;
+  }
+  return null;
+};
+
 // ── Refresh state (prevents concurrent refresh calls) ──────────────
 let isRefreshing = false;
 let failedQueue = [];
+let refreshInFlightPromise = null;
+
+/**
+ * Deduplicated token refresher. If a refresh is already in flight, returns
+ * the existing promise to prevent token rotation race conditions (e.g. React StrictMode).
+ */
+export const requestRefreshToken = () => {
+  if (refreshInFlightPromise) {
+    return refreshInFlightPromise;
+  }
+
+  refreshInFlightPromise = authClient
+    .post('/auth/refresh')
+    .then((res) => {
+      const newToken = res.data?.accessToken;
+      if (newToken) {
+        setAccessToken(newToken);
+      }
+      return res.data;
+    })
+    .finally(() => {
+      // 1.5s window protects against duplicate calls from StrictMode or rapid 401s
+      setTimeout(() => {
+        refreshInFlightPromise = null;
+      }, 1500);
+    });
+
+  return refreshInFlightPromise;
+};
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach(({ resolve, reject }) => {
@@ -70,7 +121,7 @@ const isPublicPath = (url) => PUBLIC_PATHS.some((path) => url?.includes(path));
  * Configure request and response interceptors on an Axios instance.
  */
 function setupInterceptors(client, isAuthService = false) {
-  // Request interceptor: attach bearer token and X-User-Id
+  // Request interceptor: attach bearer token, X-User-Id, and X-UserRole
   client.interceptors.request.use(
     (config) => {
       const token = getAccessToken();
@@ -80,6 +131,11 @@ function setupInterceptors(client, isAuthService = false) {
       const userId = getAuthUserId();
       if (userId) {
         config.headers['X-User-Id'] = userId;
+      }
+      const role = getAuthUserRole();
+      if (role) {
+        config.headers['X-UserRole'] = role;
+        config.headers['X-User-Role'] = role;
       }
       return config;
     },
@@ -110,9 +166,8 @@ function setupInterceptors(client, isAuthService = false) {
         isRefreshing = true;
 
         try {
-          const { data } = await authClient.post('/auth/refresh');
+          const data = await requestRefreshToken();
           const newToken = data.accessToken;
-          setAccessToken(newToken);
           processQueue(null, newToken);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return client(originalRequest);
@@ -120,6 +175,7 @@ function setupInterceptors(client, isAuthService = false) {
           processQueue(refreshError, null);
           clearAccessToken();
           setAuthUserId(null);
+          setAuthUserRole(null);
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
@@ -160,6 +216,19 @@ export const analyticsClient = axios.create({
   withCredentials: true,
 });
 setupInterceptors(analyticsClient);
+
+export const trainerClient = axios.create({
+  baseURL: TRAINER_API_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+});
+setupInterceptors(trainerClient);
+
+export const contentClient = axios.create({
+  baseURL: CONTENT_API_URL,
+  withCredentials: true,
+});
+setupInterceptors(contentClient);
 
 // Default export is authClient for backwards compatibility
 export default authClient;
