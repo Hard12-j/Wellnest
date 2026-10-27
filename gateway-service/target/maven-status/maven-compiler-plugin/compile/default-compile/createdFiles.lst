@@ -1,0 +1,7 @@
+com\wellnest\gateway\filter\JwtAuthGatewayFilterFactory.class
+com\wellnest\gateway\filter\JwtAuthOptionalGatewayFilterFactory.class
+com\wellnest\gateway\GatewayApplication.class
+com\wellnest\gateway\filter\RequestLoggingFilter.class
+com\wellnest\gateway\config\SecurityConfig.class
+com\wellnest\gateway\config\CorsConfig.class
+com\wellnest\gateway\security\JwtUtil.class

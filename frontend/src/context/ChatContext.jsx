@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import { Client } from '@stomp/stompjs';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
-import { getAccessToken } from '../api/axiosInstance';
+import { getAccessToken, CHAT_WS_URL } from '../api/axiosInstance';
 import * as chatApi from '../api/chatApi';
 
 const ChatContext = createContext(null);
@@ -15,12 +15,14 @@ export const useChat = () => {
   return context;
 };
 
+/**
+ * Resolve the WebSocket broker URL.
+ * - If CHAT_WS_URL is set (non-empty) in axiosInstance, use it directly.
+ * - Otherwise derive ws(s):// from the current window host (Vite dev proxy handles it).
+ */
 const getWsBrokerUrl = () => {
-  if (import.meta.env.VITE_CHAT_WS_URL) {
-    return import.meta.env.VITE_CHAT_WS_URL;
-  }
-  const isHttps = window.location.protocol === 'https:';
-  const protocol = isHttps ? 'wss:' : 'ws:';
+  if (CHAT_WS_URL) return CHAT_WS_URL;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.host}/ws`;
 };
 
