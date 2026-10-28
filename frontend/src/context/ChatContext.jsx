@@ -20,8 +20,6 @@ export const useChat = () => {
  * - If CHAT_WS_URL is set (non-empty) in axiosInstance, use it directly.
  * - Otherwise derive ws(s):// from the current window host (Vite dev proxy handles it).
  */
-const CHAT_WS_URL = import.meta.env.VITE_CHAT_WS_URL;
-
 const getWsBrokerUrl = () => {
   if (CHAT_WS_URL?.trim()) return CHAT_WS_URL;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
