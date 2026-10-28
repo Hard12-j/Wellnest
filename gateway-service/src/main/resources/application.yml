@@ -81,7 +81,7 @@ spring:
 
 # JWT secret – default supplied for local development / debugging
 jwt:
-  secret: ${JWT_SECRET:7de8d49bb8cadb530d8540fd21737f816d8061e2fd863f724d2bf0e313fd87f3}
+  secret: ${JWT_SECRET}
 
 # Allowed origins for CORS (frontend dev + prod)
 gateway:
