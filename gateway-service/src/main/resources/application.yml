@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8088}
 
 spring:
   application:
@@ -14,7 +14,7 @@ spring:
 
         # ── 1. Auth Service (public – no JWT required) ───────────────────────────
         - id: auth-service
-          uri: http://${AUTH_SERVICE_HOST:localhost}:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/auth/**
           filters:
@@ -27,7 +27,7 @@ spring:
 
         # ── 2. Profile Service ───────────────────────────────────────────────────
         - id: profile-service
-          uri: http://${PROFILE_SERVICE_HOST:localhost}:8082
+          uri: ${PROFILE_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/profile/**
           filters:
@@ -35,7 +35,7 @@ spring:
 
         # ── 3. Tracker Service ───────────────────────────────────────────────────
         - id: tracker-service
-          uri: http://${TRACKER_SERVICE_HOST:localhost}:8083
+          uri: ${TRACKER_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/api/tracker/**
           filters:
@@ -43,7 +43,7 @@ spring:
 
         # ── 4. Analytics Service ─────────────────────────────────────────────────
         - id: analytics-service
-          uri: http://${ANALYTICS_SERVICE_HOST:localhost}:8084
+          uri: ${ANALYTICS_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/analytics/**
           filters:
@@ -51,7 +51,7 @@ spring:
 
         # ── 5. Trainer Service ───────────────────────────────────────────────────
         - id: trainer-service
-          uri: http://${TRAINER_SERVICE_HOST:localhost}:8085
+          uri: ${TRAINER_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/trainers/**
           filters:
@@ -59,7 +59,7 @@ spring:
 
         # ── 6. Content Service ───────────────────────────────────────────────────
         - id: content-service
-          uri: http://${CONTENT_SERVICE_HOST:localhost}:8086
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/content/**
           filters:
@@ -67,7 +67,7 @@ spring:
 
         # ── 7. Chat Service – REST (JWT required) ────────────────────────────────
         - id: chat-service-rest
-          uri: http://${CHAT_SERVICE_HOST:localhost}:8088
+          uri: ${CHAT_SERVICE_URL:http://localhost:8088}
           predicates:
             - Path=/api/chat/**
           filters:
@@ -75,9 +75,13 @@ spring:
 
         # ── 8. Chat Service – WebSocket (no HTTP-level JWT; STOMP CONNECT checks it) ─
         - id: chat-service-ws
-          uri: ws://${CHAT_SERVICE_HOST:localhost}:8088
+          uri: ${CHAT_SERVICE_WS_URL:ws://localhost:8088}
           predicates:
             - Path=/ws/**
+
+      httpclient:
+        connect-timeout: 90000
+        response-timeout: 120s
 
 # JWT secret – default supplied for local development / debugging
 jwt:
