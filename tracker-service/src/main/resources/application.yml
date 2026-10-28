@@ -20,7 +20,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
-        max.block.ms: 3000
+        max.block.ms: 30000
 
 tracker:
   # Used for calorie estimates until we cache the user's weight from ProfileUpdated events

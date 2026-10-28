@@ -22,7 +22,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
-        max.block.ms: 3000
+        max.block.ms: 30000
 
 profile:
   upload-dir: ${PROFILE_UPLOAD_DIR:./uploads/avatars}
