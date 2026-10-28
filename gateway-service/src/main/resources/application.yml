@@ -73,12 +73,15 @@ spring:
             - Path=/api/chat/**
           filters:
             - JwtAuth
+            - RemoveRequestHeader=Origin
 
         # ── 8. Chat Service – WebSocket (no HTTP-level JWT; STOMP CONNECT checks it) ─
         - id: chat-service-ws
           uri: ${CHAT_SERVICE_WS_URL:ws://localhost:8088}
           predicates:
             - Path=/ws/**
+          filters:
+            - RemoveRequestHeader=Origin
 
       httpclient:
         connect-timeout: 90000
