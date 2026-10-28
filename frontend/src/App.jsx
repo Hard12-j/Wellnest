@@ -3,8 +3,15 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import AppRoutes from './routes/AppRoutes';
+import { useEffect } from 'react';
+import { wakeServices } from './utils/wakeServices';
 
 const App = () => {
+  
+  useEffect(() => {
+    wakeServices();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
