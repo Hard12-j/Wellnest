@@ -18,6 +18,7 @@ spring:
           predicates:
             - Path=/auth/**
           filters:
+            - RemoveRequestHeader=Origin
             - name: RemoveRequestHeader
               args:
                 name: X-User-Id
