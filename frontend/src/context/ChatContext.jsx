@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import { Client } from '@stomp/stompjs';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
-import { getAccessToken, CHAT_WS_URL } from '../api/axiosInstance';
+import { getAccessToken, requestRefreshToken, CHAT_WS_URL } from '../api/axiosInstance';
 import * as chatApi from '../api/chatApi';
 
 const ChatContext = createContext(null);
@@ -26,8 +26,37 @@ const getWsBrokerUrl = () => {
   return `${protocol}//${window.location.host}/ws`;
 };
 
+/**
+ * True when the JWT is missing, malformed, or expires within the next 30 seconds.
+ */
+const isTokenStale = (token) => {
+  if (!token) return true;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return !payload.exp || payload.exp * 1000 - Date.now() < 30_000;
+  } catch {
+    return true;
+  }
+};
+
+/**
+ * Return a usable access token, refreshing it first if it's missing or about to expire.
+ * The chat broker rejects CONNECT frames without a valid token, so connecting with a
+ * stale one would leave the client stuck in a reconnect loop.
+ */
+const getFreshAccessToken = async () => {
+  const token = getAccessToken();
+  if (!isTokenStale(token)) return token;
+  try {
+    await requestRefreshToken();
+  } catch {
+    // Fall through with whatever token we have; the next reconnect attempt retries
+  }
+  return getAccessToken();
+};
+
 export const ChatProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'connected' | 'connecting' | 'reconnecting' | 'disconnected'
   const stompClientRef = useRef(null);
@@ -92,6 +121,9 @@ export const ChatProvider = ({ children }) => {
 
   // Initialize STOMP connection when user logs in
   useEffect(() => {
+    // Wait until the auth session has been restored so we have an access token to connect with
+    if (isLoading) return;
+
     if (!isAuthenticated || !user) {
       if (stompClientRef.current) {
         stompClientRef.current.deactivate();
@@ -106,21 +138,17 @@ export const ChatProvider = ({ children }) => {
     refreshUnreadCount();
 
     const brokerURL = getWsBrokerUrl();
-    const token = getAccessToken();
 
     setConnectionStatus('connecting');
 
     const client = new Client({
       brokerURL,
-      connectHeaders: {
-        Authorization: token ? `Bearer ${token}` : '',
-      },
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
-      beforeConnect: () => {
-        // Always grab latest access token before reconnecting
-        const freshToken = getAccessToken();
+      beforeConnect: async () => {
+        // Always connect with a valid access token, refreshing it if it has expired
+        const freshToken = await getFreshAccessToken();
         client.connectHeaders = {
           Authorization: freshToken ? `Bearer ${freshToken}` : '',
         };
@@ -198,7 +226,7 @@ export const ChatProvider = ({ children }) => {
       stompClientRef.current = null;
       setConnectionStatus('disconnected');
     };
-  }, [isAuthenticated, user?.id, refreshUnreadCount]);
+  }, [isAuthenticated, isLoading, user?.id, refreshUnreadCount]);
 
   const value = {
     unreadCount,
