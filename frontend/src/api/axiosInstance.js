@@ -8,6 +8,7 @@ const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || '';
 
 // WebSocket base URL used by ChatContext.jsx
 export const CHAT_WS_URL = (() => {
+  if (import.meta.env.VITE_CHAT_WS_URL) return import.meta.env.VITE_CHAT_WS_URL;
   if (import.meta.env.VITE_GATEWAY_WS_URL) return import.meta.env.VITE_GATEWAY_WS_URL;
   // Derive from GATEWAY_URL if available, otherwise use current host (Vite proxy handles it)
   if (GATEWAY_URL) return GATEWAY_URL.replace(/^http/, 'ws') + '/ws';
