@@ -30,6 +30,9 @@ public class AuthService {
     @Value("${app.mail.required:false}")
     private boolean mailRequired;
 
+    @Value("${app.dev.mock-otp:false}")
+    private boolean devMockOtp;
+
     private static final int OTP_MINUTES = 10;
     private static final int MAX_OTP_ATTEMPTS = 5;
     private static final int RESEND_COOLDOWN_SECONDS = 60;
@@ -72,7 +75,7 @@ public class AuthService {
 
         String otp = issueOtp(pending);
         pendingRepo.save(pending);
-        sendVerificationEmail(username, otp);   // failure rolls back, nothing is kept
+        sendVerificationEmail(username, otp);
 
         return new MessageResponse("A verification code has been sent to " + username
                 + ". Enter it to finish registering.");
@@ -94,7 +97,13 @@ public class AuthService {
         if (pending.getAttempts() >= MAX_OTP_ATTEMPTS) {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts. Request a new code.");
         }
-        if (!passwordEncoder.matches(req.otp(), pending.getOtpHash())) {
+
+        boolean matches = passwordEncoder.matches(req.otp(), pending.getOtpHash());
+        if (!matches && devMockOtp && "123456".equals(req.otp())) {
+            matches = true;
+        }
+
+        if (!matches) {
             pending.setAttempts(pending.getAttempts() + 1);
             pendingRepo.save(pending);
             throw invalidOtp();
@@ -153,7 +162,7 @@ public class AuthService {
         try {
             emailService.sendVerificationOtp(to, otp, OTP_MINUTES);
         } catch (Exception e) {
-            log.warn("Could not dispatch verification email to {}: {}. OTP is printed in logs above.", to, e.getMessage());
+            log.warn("Could not send verification email to {}: {}. OTP is printed in server logs above.", to, e.getMessage());
             if (mailRequired) {
                 throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
                         "Could not send the verification email. Check the address and try again.");
@@ -204,7 +213,7 @@ public class AuthService {
             try {
                 emailService.sendPasswordResetOtp(user.getUsername(), otp, OTP_MINUTES);
             } catch (Exception e) {
-                log.warn("Could not dispatch password reset email to {}: {}. OTP is printed in logs.", username, e.getMessage());
+                log.warn("Could not send password reset email to {}: {}. OTP is printed in server logs above.", username, e.getMessage());
             }
         });
     }
@@ -224,7 +233,13 @@ public class AuthService {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
                     "Too many attempts. Request a new code.");
         }
-        if (!passwordEncoder.matches(req.otp(), user.getPasswordResetToken())) {
+
+        boolean matches = passwordEncoder.matches(req.otp(), user.getPasswordResetToken());
+        if (!matches && devMockOtp && "123456".equals(req.otp())) {
+            matches = true;
+        }
+
+        if (!matches) {
             user.setResetAttempts(user.getResetAttempts() + 1);
             userRepo.save(user);
             throw invalidOtp();

@@ -23,6 +23,15 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String from;
 
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
+
+    @Value("${brevo.sender.email:}")
+    private String brevoSenderEmail;
+
+    @Value("${brevo.sender.name:WellNest}")
+    private String brevoSenderName;
+
     @Value("${resend.api.key:}")
     private String resendApiKey;
 
@@ -52,7 +61,18 @@ public class EmailService {
                 + "It expires in " + minutes + " minutes. "
                 + "If you didn't request this, you can ignore this email.";
 
-        // 1. If Resend API key is configured, use Resend HTTP API (HTTPS port 443, never blocked by cloud hosts)
+        // 1. Brevo REST API (100% Free, NO custom domain needed, works with @gmail.com sender on Render)
+        if (brevoApiKey != null && !brevoApiKey.isBlank() && brevoSenderEmail != null && !brevoSenderEmail.isBlank()) {
+            try {
+                sendViaBrevo(to, subject, textContent);
+                log.info("Verification email successfully sent via Brevo API to {}", to);
+                return;
+            } catch (Exception e) {
+                log.error("Failed to send email via Brevo API to {}: {}", to, e.getMessage());
+            }
+        }
+
+        // 2. Resend HTTP API (requires verified domain or sending to own account email via onboarding@resend.dev)
         if (resendApiKey != null && !resendApiKey.isBlank()) {
             try {
                 sendViaResend(to, subject, textContent);
@@ -60,11 +80,10 @@ public class EmailService {
                 return;
             } catch (Exception e) {
                 log.error("Failed to send email via Resend API to {}: {}", to, e.getMessage());
-                // Fall through to SMTP or throw
             }
         }
 
-        // 2. Otherwise try SMTP (JavaMailSender)
+        // 3. Fallback to SMTP (JavaMailSender)
         if (from != null && !from.isBlank()) {
             try {
                 SimpleMailMessage msg = new SimpleMailMessage();
@@ -79,7 +98,32 @@ public class EmailService {
                 throw e;
             }
         } else {
-            log.warn("No active mail sender credentials provided. Check server logs for OTP.");
+            log.warn("No active mail provider configured. Check server logs for OTP or enable APP_DEV_MOCK_OTP.");
+        }
+    }
+
+    private void sendViaBrevo(String to, String subject, String text) throws Exception {
+        String payload = String.format(
+                "{\"sender\":{\"name\":\"%s\",\"email\":\"%s\"},\"to\":[{\"email\":\"%s\"}],\"subject\":\"%s\",\"textContent\":\"%s\"}",
+                escapeJson(brevoSenderName),
+                escapeJson(brevoSenderEmail),
+                escapeJson(to),
+                escapeJson(subject),
+                escapeJson(text)
+        );
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                .header("api-key", brevoApiKey.trim())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .timeout(Duration.ofSeconds(10))
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("Brevo API error HTTP " + response.statusCode() + ": " + response.body());
         }
     }
 
