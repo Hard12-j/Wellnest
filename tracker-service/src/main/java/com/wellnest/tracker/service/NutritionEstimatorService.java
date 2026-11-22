@@ -30,11 +30,10 @@ public class NutritionEstimatorService {
     @Value("${nutrition.gemini.api-key:}")
     private String geminiApiKey;
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient;
 
-    public NutritionEstimatorService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public NutritionEstimatorService() {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
