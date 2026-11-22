@@ -76,6 +76,8 @@ const Tracker = () => {
     carbsG: '',
     fatG: '',
   });
+  const [estimatingNutrition, setEstimatingNutrition] = useState(false);
+  const [nutritionPreview, setNutritionPreview] = useState(null);
 
   const [sleepForm, setSleepForm] = useState({
     hours: 7.5,
@@ -156,10 +158,42 @@ const Tracker = () => {
   };
 
   // Meal handlers
+  const handleAutoDetectNutrition = async () => {
+    const query = mealForm.name.trim();
+    if (!query) {
+      toast.error('Please enter what you ate and quantity first (e.g. 2 rotis with 1 bowl dal)');
+      return;
+    }
+    setEstimatingNutrition(true);
+    try {
+      const data = await trackerApi.estimateNutrition(query);
+      setMealForm((prev) => ({
+        ...prev,
+        name: data.foodName || prev.name,
+        calories: data.calories != null ? String(data.calories) : prev.calories,
+        proteinG: data.proteinG != null ? String(data.proteinG) : prev.proteinG,
+        carbsG: data.carbsG != null ? String(data.carbsG) : prev.carbsG,
+        fatG: data.fatG != null ? String(data.fatG) : prev.fatG,
+      }));
+      setNutritionPreview(data);
+      const sourceLabel =
+        data.source === 'API_NINJAS' || data.source === 'CALORIE_NINJAS'
+          ? 'Calculated via API Ninjas! 🥗'
+          : data.source === 'GEMINI_AI'
+          ? 'Auto-detected via AI Nutritionist! ✨'
+          : 'Calculated via Nutrition Library! ⚡';
+      toast.success(sourceLabel);
+    } catch (err) {
+      toast.error('Could not auto-detect. You can enter values manually.');
+    } finally {
+      setEstimatingNutrition(false);
+    }
+  };
+
   const handleCreateMeal = async (e) => {
     e.preventDefault();
     if (!mealForm.name.trim() || !mealForm.calories) {
-      toast.error('Please enter meal name and calories');
+      toast.error('Please enter what you ate or click Auto-Detect');
       return;
     }
     setSubmitting(true);
@@ -170,6 +204,7 @@ const Tracker = () => {
       });
       toast.success('Meal logged successfully!');
       setShowMealModal(false);
+      setNutritionPreview(null);
       setMealForm({
         mealType: 'BREAKFAST',
         name: '',
@@ -1004,77 +1039,151 @@ const Tracker = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Meal / Food Item Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Grilled Chicken Salad with Quinoa"
-                  value={mealForm.name}
-                  onChange={(e) => setMealForm({ ...mealForm, name: e.target.value })}
-                  className="input-field"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase">
+                    What did you eat & in what quantity?
+                  </label>
+                  <span className="text-[11px] text-amber-700 font-medium hidden sm:inline">
+                    ✨ Auto-detects calories & macros
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 2 rotis with 1 bowl dal, or 200g chicken and rice"
+                    value={mealForm.name}
+                    onChange={(e) => setMealForm({ ...mealForm, name: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !mealForm.calories) {
+                        e.preventDefault();
+                        handleAutoDetectNutrition();
+                      }
+                    }}
+                    className="input-field flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAutoDetectNutrition}
+                    disabled={estimatingNutrition || !mealForm.name.trim()}
+                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 cursor-pointer"
+                    title="Auto-detect calories and macros using AI & nutrition database"
+                  >
+                    {estimatingNutrition ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span>{estimatingNutrition ? 'Detecting...' : 'Auto-Detect'}</span>
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Calories (kcal)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="5000"
-                  required
-                  placeholder="e.g. 520"
-                  value={mealForm.calories}
-                  onChange={(e) => setMealForm({ ...mealForm, calories: e.target.value })}
-                  className="input-field"
-                />
-              </div>
+              {/* Detected Nutrition Card */}
+              {nutritionPreview && (
+                <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 space-y-2 animate-fade-in shadow-xs">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      {nutritionPreview.source === 'GEMINI_AI'
+                        ? 'AI Nutritionist Auto-Detected ✨'
+                        : nutritionPreview.source === 'API_NINJAS' || nutritionPreview.source === 'CALORIE_NINJAS'
+                        ? 'API Ninjas (Verified Database)'
+                        : 'Smart Nutrition Library'}
+                    </span>
+                    <span className="font-extrabold text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full">
+                      {nutritionPreview.calories} kcal
+                    </span>
+                  </div>
+                  {nutritionPreview.breakdown && (
+                    <p className="text-xs text-amber-800/90 italic">
+                      {nutritionPreview.breakdown}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
+                    <div className="bg-white/90 rounded-lg p-1.5 border border-amber-100 shadow-2xs">
+                      <span className="text-gray-500 block text-[10px] uppercase font-bold">Protein</span>
+                      <span className="font-bold text-gray-800">{nutritionPreview.proteinG || 0}g</span>
+                    </div>
+                    <div className="bg-white/90 rounded-lg p-1.5 border border-amber-100 shadow-2xs">
+                      <span className="text-gray-500 block text-[10px] uppercase font-bold">Carbs</span>
+                      <span className="font-bold text-gray-800">{nutritionPreview.carbsG || 0}g</span>
+                    </div>
+                    <div className="bg-white/90 rounded-lg p-1.5 border border-amber-100 shadow-2xs">
+                      <span className="text-gray-500 block text-[10px] uppercase font-bold">Fat</span>
+                      <span className="font-bold text-gray-800">{nutritionPreview.fatG || 0}g</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              <div className="grid grid-cols-3 gap-3">
+              {/* Auto-filled Values / Optional Adjustments */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-600 uppercase">
+                    Nutritional Values {mealForm.calories ? '(Auto-Filled)' : '(Auto-detects or enter manually)'}
+                  </span>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                    Protein (g)
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Calories (kcal)
                   </label>
                   <input
                     type="number"
-                    step="0.1"
                     min="0"
-                    placeholder="35"
-                    value={mealForm.proteinG}
-                    onChange={(e) => setMealForm({ ...mealForm, proteinG: e.target.value })}
+                    max="5000"
+                    required
+                    placeholder="Click Auto-Detect above or enter manually"
+                    value={mealForm.calories}
+                    onChange={(e) => setMealForm({ ...mealForm, calories: e.target.value })}
                     className="input-field"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                    Carbs (g)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="45"
-                    value={mealForm.carbsG}
-                    onChange={(e) => setMealForm({ ...mealForm, carbsG: e.target.value })}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                    Fat (g)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="12"
-                    value={mealForm.fatG}
-                    onChange={(e) => setMealForm({ ...mealForm, fatG: e.target.value })}
-                    className="input-field"
-                  />
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Protein (g)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="35"
+                      value={mealForm.proteinG}
+                      onChange={(e) => setMealForm({ ...mealForm, proteinG: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Carbs (g)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="45"
+                      value={mealForm.carbsG}
+                      onChange={(e) => setMealForm({ ...mealForm, carbsG: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Fat (g)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="12"
+                      value={mealForm.fatG}
+                      onChange={(e) => setMealForm({ ...mealForm, fatG: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
                 </div>
               </div>
 

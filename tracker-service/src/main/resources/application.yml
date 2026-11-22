@@ -25,3 +25,10 @@ spring:
 tracker:
   # Used for calorie estimates until we cache the user's weight from ProfileUpdated events
   default-weight-kg: 70
+
+# Hybrid Nutrition Auto-Detection (API Ninjas + Gemini AI)
+nutrition:
+  apininjas:
+    api-key: ${API_NINJAS_API_KEY:${CALORIENINJAS_API_KEY:}}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}

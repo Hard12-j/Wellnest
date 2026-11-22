@@ -3,6 +3,7 @@ package com.wellnest.tracker.web;
 import com.wellnest.tracker.dto.*;
 import com.wellnest.tracker.model.MealType;
 import com.wellnest.tracker.service.MealService;
+import com.wellnest.tracker.service.NutritionEstimatorService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -15,8 +16,17 @@ import java.time.LocalDate;
 public class MealController {
 
     private final MealService service;
+    private final NutritionEstimatorService nutritionEstimatorService;
 
-    public MealController(MealService service) { this.service = service; }
+    public MealController(MealService service, NutritionEstimatorService nutritionEstimatorService) {
+        this.service = service;
+        this.nutritionEstimatorService = nutritionEstimatorService;
+    }
+
+    @PostMapping("/estimate")
+    public NutritionEstimateResponse estimateNutrition(@Valid @RequestBody NutritionEstimateRequest r) {
+        return nutritionEstimatorService.estimate(r.query());
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

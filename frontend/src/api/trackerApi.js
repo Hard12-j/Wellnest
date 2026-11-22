@@ -98,6 +98,11 @@ export const deleteMeal = async (id) => {
   await trackerClient.delete(`/api/tracker/meals/${id}`);
 };
 
+export const estimateNutrition = async (query) => {
+  const { data } = await trackerClient.post('/api/tracker/meals/estimate', { query });
+  return data; // { foodName, calories, proteinG, carbsG, fatG, source, breakdown }
+};
+
 // ── Hydration ──────────────────────────────────────────────
 
 export const listHydration = async ({ from, to, page = 0, size = 50 } = {}) => {
