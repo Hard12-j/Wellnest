@@ -10,6 +10,8 @@ import com.example.Auth_service.repository.PendingRegistrationRepository;
 import com.example.Auth_service.repository.UserRepository;
 import com.example.Auth_service.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,9 +22,13 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    @Value("${app.mail.required:false}")
+    private boolean mailRequired;
 
     private static final int OTP_MINUTES = 10;
     private static final int MAX_OTP_ATTEMPTS = 5;
@@ -146,9 +152,12 @@ public class AuthService {
     private void sendVerificationEmail(String to, String otp) {
         try {
             emailService.sendVerificationOtp(to, otp, OTP_MINUTES);
-        } catch (MailException e) {
-            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Could not send the verification email. Check the address and try again.");
+        } catch (Exception e) {
+            log.warn("Could not dispatch verification email to {}: {}. OTP is printed in logs above.", to, e.getMessage());
+            if (mailRequired) {
+                throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "Could not send the verification email. Check the address and try again.");
+            }
         }
     }
 
@@ -192,7 +201,11 @@ public class AuthService {
             user.setResetTokenExpiry(Instant.now().plus(OTP_MINUTES, ChronoUnit.MINUTES));
             user.setResetAttempts(0);
             userRepo.save(user);
-            emailService.sendVerificationOtp(user.getUsername(), otp, OTP_MINUTES);
+            try {
+                emailService.sendPasswordResetOtp(user.getUsername(), otp, OTP_MINUTES);
+            } catch (Exception e) {
+                log.warn("Could not dispatch password reset email to {}: {}. OTP is printed in logs.", username, e.getMessage());
+            }
         });
     }
 

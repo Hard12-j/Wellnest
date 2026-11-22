@@ -1,0 +1,9 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: SCRAM-SHA-256   # use whatever Aiven shows (SCRAM-SHA-256 or -512)
+      sasl.jaas.config: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_USER}" password="${KAFKA_PASSWORD}";'
+      ssl.truststore.type: PEM
+      ssl.truststore.certificates: ${KAFKA_CA_CERT}

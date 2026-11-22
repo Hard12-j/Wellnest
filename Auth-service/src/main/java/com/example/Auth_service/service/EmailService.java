@@ -1,19 +1,37 @@
 package com.example.Auth_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String from;
+
+    @Value("${resend.api.key:}")
+    private String resendApiKey;
+
+    @Value("${resend.from.email:onboarding@resend.dev}")
+    private String resendFrom;
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
 
     public void sendVerificationOtp(String to, String otp, int minutes) {
         send(to, "Verify your WellNest email", "email verification", otp, minutes);
@@ -24,13 +42,76 @@ public class EmailService {
     }
 
     private void send(String to, String subject, String purpose, String otp, int minutes) {
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(from);
-        msg.setTo(to);
-        msg.setSubject(subject);
-        msg.setText("Your WellNest " + purpose + " code is " + otp + ".\n"
+        // ALWAYS log the OTP so it appears in the server logs (Render dashboard logs)
+        log.info("==========================================================");
+        log.info("🔐 WELLNEST OTP for [{}]: {}", to, otp);
+        log.info("   Purpose: {} (expires in {} minutes)", purpose, minutes);
+        log.info("==========================================================");
+
+        String textContent = "Your WellNest " + purpose + " code is " + otp + ".\n"
                 + "It expires in " + minutes + " minutes. "
-                + "If you didn't request this, you can ignore this email.");
-        mailSender.send(msg);
+                + "If you didn't request this, you can ignore this email.";
+
+        // 1. If Resend API key is configured, use Resend HTTP API (HTTPS port 443, never blocked by cloud hosts)
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            try {
+                sendViaResend(to, subject, textContent);
+                log.info("Verification email successfully sent via Resend API to {}", to);
+                return;
+            } catch (Exception e) {
+                log.error("Failed to send email via Resend API to {}: {}", to, e.getMessage());
+                // Fall through to SMTP or throw
+            }
+        }
+
+        // 2. Otherwise try SMTP (JavaMailSender)
+        if (from != null && !from.isBlank()) {
+            try {
+                SimpleMailMessage msg = new SimpleMailMessage();
+                msg.setFrom(from);
+                msg.setTo(to);
+                msg.setSubject(subject);
+                msg.setText(textContent);
+                mailSender.send(msg);
+                log.info("Verification email sent via SMTP to {}", to);
+            } catch (Exception e) {
+                log.error("Failed to send email via SMTP to {}: {}", to, e.getMessage());
+                throw e;
+            }
+        } else {
+            log.warn("No active mail sender credentials provided. Check server logs for OTP.");
+        }
+    }
+
+    private void sendViaResend(String to, String subject, String text) throws Exception {
+        String payload = String.format(
+                "{\"from\":\"%s\",\"to\":[\"%s\"],\"subject\":\"%s\",\"text\":\"%s\"}",
+                escapeJson(resendFrom),
+                escapeJson(to),
+                escapeJson(subject),
+                escapeJson(text)
+        );
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.resend.com/emails"))
+                .header("Authorization", "Bearer " + resendApiKey.trim())
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(10))
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("Resend API error HTTP " + response.statusCode() + ": " + response.body());
+        }
+    }
+
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }
