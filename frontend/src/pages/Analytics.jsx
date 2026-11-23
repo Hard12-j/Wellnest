@@ -39,6 +39,12 @@ const getISODate = (daysAgo) => {
   return d.toISOString().split('T')[0];
 };
 
+const extractHealthConnectSteps = (workout) => {
+  if (!workout?.notes?.includes('source:healthconnect')) return 0;
+  const match = workout.notes.match(/([\d,]+)\s*steps/i);
+  return match ? Number.parseInt(match[1].replace(/,/g, ''), 10) || 0 : 0;
+};
+
 const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,6 +52,8 @@ const Analytics = () => {
   const [goalProgress, setGoalProgress] = useState(null);
   const [insights, setInsights] = useState([]);
   const [weeklyTrends, setWeeklyTrends] = useState(null);
+  const [stepsToday, setStepsToday] = useState(0);
+  const [stepHistory, setStepHistory] = useState([]);
 
   const fetchAnalytics = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -55,17 +63,33 @@ const Analytics = () => {
     const from = getISODate(6); // 7 days: today minus 6 days
 
     try {
-      const [cardsRes, goalRes, insightsRes, trendsRes] = await Promise.allSettled([
+      const [cardsRes, goalRes, insightsRes, trendsRes, stepWorkoutsRes] = await Promise.allSettled([
         analyticsApi.getGoalCards(),
         analyticsApi.getGoalProgress(),
         analyticsApi.getInsights(),
         analyticsApi.getWeeklyTrends(from, to),
+        trackerApi.listWorkouts({ from, to, size: 100 }),
       ]);
 
       if (cardsRes.status === 'fulfilled') setGoalCards(cardsRes.value);
       if (goalRes.status === 'fulfilled') setGoalProgress(goalRes.value);
       if (insightsRes.status === 'fulfilled') setInsights(insightsRes.value?.insights || []);
       if (trendsRes.status === 'fulfilled') setWeeklyTrends(trendsRes.value);
+      if (stepWorkoutsRes.status === 'fulfilled') {
+        const stepsByDate = new Map();
+        (stepWorkoutsRes.value?.content || []).forEach((workout) => {
+          const steps = extractHealthConnectSteps(workout);
+          if (steps > 0) stepsByDate.set(workout.date, (stepsByDate.get(workout.date) || 0) + steps);
+        });
+        setStepsToday(stepsByDate.get(to) || 0);
+        setStepHistory(Array.from({ length: 7 }, (_, index) => {
+          const date = getISODate(6 - index);
+          return { date, steps: stepsByDate.get(date) || 0 };
+        }));
+      } else {
+        setStepsToday(0);
+        setStepHistory([]);
+      }
     } catch {
       toast.error('Failed to load analytics telemetry');
     } finally {
@@ -102,6 +126,7 @@ const Analytics = () => {
 
   const trendDays = weeklyTrends?.days || [];
   const statusInfo = getStatusBadge(goalProgress?.status);
+  const maxStepCount = Math.max(10000, ...stepHistory.map((day) => day.steps));
 
   // Targets from goalCards
   const waterTargetL = goalCards?.water?.targetLitres || 3.0;
@@ -139,6 +164,56 @@ const Analytics = () => {
 
       {/* ── 2. MY GOALS SECTION (IMAGE 2) ── */}
       <MyGoalsCards goals={goalCards} />
+
+      {/* Steps unlock only after the mobile app syncs Health Connect data today. */}
+      {stepsToday > 0 ? (
+        <section className="card p-5 sm:p-6 border border-forest-100 bg-gradient-to-r from-forest-50/60 to-emerald-50/40" aria-label="Health Connect steps">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-forest-100 text-forest-600 flex items-center justify-center shrink-0"><Footprints className="w-5 h-5" /></div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Steps today · Health Connect</p>
+                <p className="text-2xl font-extrabold text-gray-900 mt-1">{stepsToday.toLocaleString()} <span className="text-sm font-normal text-gray-400">/ 10,000</span></p>
+                <p className="text-xs text-forest-700 font-semibold mt-1">Synced from WellNest mobile today</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-gray-700">
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl border border-gray-100"><MapPin className="w-3.5 h-3.5 text-forest-600" />{(stepsToday * 0.00076).toFixed(2)} km</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl border border-gray-100"><Flame className="w-3.5 h-3.5 text-orange-500" />{Math.round(stepsToday * 0.04)} kcal</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl border border-gray-100"><Timer className="w-3.5 h-3.5 text-blue-600" />{Math.round(stepsToday / 100)} min</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="w-full bg-forest-100 h-2 rounded-full overflow-hidden"><div className="bg-forest-500 h-full rounded-full transition-all" style={{ width: `${Math.min(100, (stepsToday / 10000) * 100)}%` }} /></div>
+            <p className="text-[11px] text-gray-500 mt-1">{Math.round((stepsToday / 10000) * 100)}% of the 10,000 step daily goal</p>
+          </div>
+          <div className="mt-5 pt-4 border-t border-forest-100">
+            <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-bold text-gray-800">Steps · last 7 days</h3><span className="text-[11px] text-gray-500">Health Connect syncs</span></div>
+            <div className="grid grid-cols-7 gap-2 items-end h-24">
+              {stepHistory.map((day) => {
+                const height = day.steps > 0 ? Math.max(8, (day.steps / maxStepCount) * 100) : 3;
+                const label = new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' });
+                return <div key={day.date} className="h-full flex flex-col items-center justify-end gap-1" title={`${label}: ${day.steps.toLocaleString()} steps`}>
+                  <div className="w-full flex-1 flex items-end"><div className={`w-full rounded-t-md ${day.steps ? 'bg-forest-500' : 'bg-gray-200'}`} style={{ height: `${height}%` }} /></div>
+                  <span className="text-[9px] font-semibold text-gray-500">{label}</span>
+                </div>;
+              })}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="card p-5 border border-dashed border-gray-200 bg-gray-50/70 opacity-80" aria-disabled="true" aria-label="Steps locked">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center shrink-0"><Lock className="w-5 h-5" /></div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5"><Footprints className="w-3.5 h-3.5" /> Steps · Health Connect</p>
+              <p className="text-sm font-semibold text-gray-600 mt-1">Steps analytics are locked until WellNest mobile syncs today’s steps from Health Connect.</p>
+              <p className="text-xs text-gray-500 mt-1">Install and connect the WellNest Android app, allow step access in Health Connect, then sync from the app.</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-gray-400 px-3 py-1.5 bg-white rounded-xl border border-gray-200"><Smartphone className="w-3.5 h-3.5" /> Mobile only</div>
+          </div>
+        </section>
+      )}
 
       {/* ── 3. WEIGHT & FITNESS GOAL HERO BANNER ── */}
       <div className="card p-6 sm:p-8 bg-gradient-to-br from-forest-800 via-forest-900 to-forest-950 text-white rounded-3xl relative overflow-hidden shadow-xl border border-forest-700">
