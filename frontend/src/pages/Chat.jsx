@@ -92,7 +92,7 @@ const formatMessageDateHeader = (dateString) => {
   });
 };
 
-const Chat = () => {
+const Chat = ({ compact = false }) => {
   const { user } = useAuth();
   const {
     sendMessage,
@@ -143,6 +143,7 @@ const Chat = () => {
   useEffect(() => {
     selectedConversationRef.current = selectedConversation;
     setActiveConversationId(selectedConversation?.id || null);
+    return () => setActiveConversationId(null);
   }, [selectedConversation, setActiveConversationId]);
 
   // Load name metadata for otherUserId
@@ -600,7 +601,9 @@ const Chat = () => {
     : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className={compact ? 'h-full min-h-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'}>
+      {!compact && (
+      <>
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
@@ -643,9 +646,11 @@ const Chat = () => {
           )}
         </div>
       </div>
+      </>
+      )}
 
       {/* Main Chat Container */}
-      <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden flex h-[760px] max-h-[82vh]">
+      <div className={`bg-white border border-gray-200/80 shadow-sm overflow-hidden flex ${compact ? 'h-full min-h-0 max-h-full rounded-2xl' : 'rounded-3xl h-[760px] max-h-[82vh]'}`}>
         {/* ========================================================================= */}
         {/* LEFT PANEL: Conversation List */}
         {/* ========================================================================= */}

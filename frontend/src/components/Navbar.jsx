@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Leaf,
   LayoutDashboard,
   Activity,
   BarChart3,
-  User,
   Users,
   BookOpen,
   LogOut,
@@ -18,12 +17,15 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { fetchAvatarBlobUrl } from '../api/profileApi';
+import Chat from '../pages/Chat';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logoutUser } = useAuth();
-  const { unreadCount } = useChat();
+  const { unreadCount, isConnected, isReconnecting } = useChat();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [chatWidgetOpen, setChatWidgetOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
 
@@ -64,23 +66,20 @@ const Navbar = () => {
   const navLinks = isTrainer
     ? [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/chat', label: 'Chat', icon: MessageSquare, badge: unreadCount },
         { to: '/community', label: 'Community', icon: BookOpen },
-        { to: '/profile', label: 'Profile', icon: User },
       ]
     : [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/chat', label: 'Chat', icon: MessageSquare, badge: unreadCount },
         { to: '/tracker', label: 'Tracker', icon: Activity },
         { to: '/analytics', label: 'Analytics', icon: BarChart3 },
         { to: '/trainers', label: 'Trainers', icon: Users },
         { to: '/community', label: 'Community', icon: BookOpen },
-        { to: '/profile', label: 'Profile', icon: User },
       ];
 
   const initials = `${user?.first?.[0] || 'U'}${user?.last?.[0] || ''}`.toUpperCase();
 
   return (
+    <>
     <nav className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -181,6 +180,22 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="flex md:hidden items-center gap-2">
+            <NavLink
+              to="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Open profile"
+              className="w-9 h-9 rounded-full overflow-hidden border-2 border-forest-200 flex items-center justify-center"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className={`w-full h-full flex items-center justify-center text-xs font-extrabold ${
+                  isTrainer ? 'bg-emerald-100 text-emerald-800' : 'bg-forest-100 text-forest-700'
+                }`}>
+                  {initials}
+                </span>
+              )}
+            </NavLink>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-gray-600 hover:text-forest-600 hover:bg-forest-50 rounded-xl transition-colors"
@@ -269,6 +284,44 @@ const Navbar = () => {
         </div>
       )}
     </nav>
+    {location.pathname !== '/chat' ? (
+      <>
+        {chatWidgetOpen ? (
+          <section
+            className="fixed bottom-20 left-4 z-[60] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+            style={{ width: 'min(860px, calc(100vw - 2rem))', height: 'min(680px, calc(100vh - 7rem))' }}
+            aria-label="Chat window"
+          >
+            <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-forest-50 text-forest-700 flex items-center justify-center"><MessageSquare className="w-4 h-4" /></div>
+                <div>
+                  <h2 className="text-sm font-extrabold text-gray-900">Messages</h2>
+                  <p className={`text-[10px] font-semibold ${isConnected ? 'text-emerald-600' : isReconnecting ? 'text-amber-600' : 'text-gray-400'}`}>
+                    {isConnected ? 'Live connection' : isReconnecting ? 'Reconnecting…' : 'Connecting…'}
+                  </p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setChatWidgetOpen(false)} className="w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 flex items-center justify-center" aria-label="Close chat">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden"><Chat compact /></div>
+          </section>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setChatWidgetOpen((open) => !open)}
+          aria-label={unreadCount > 0 ? `Open chat, ${unreadCount} unread messages` : chatWidgetOpen ? 'Close chat' : 'Open chat'}
+          aria-expanded={chatWidgetOpen}
+          className="fixed bottom-5 left-5 z-[60] w-14 h-14 rounded-full bg-forest-600 hover:bg-forest-700 text-white shadow-xl shadow-forest-900/20 flex items-center justify-center transition-all hover:scale-105"
+        >
+          {chatWidgetOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+          {unreadCount > 0 && !chatWidgetOpen ? <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white">{unreadCount > 99 ? '99+' : unreadCount}</span> : null}
+        </button>
+      </>
+    ) : null}
+    </>
   );
 };
 
