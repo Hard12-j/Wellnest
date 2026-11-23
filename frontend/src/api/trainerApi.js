@@ -22,6 +22,7 @@ export const updateTrainerProfile = async ({
   experienceYears,
   contactNo,
   availability,
+  sessionFee,
 }) => {
   const payload = {
     first,
@@ -31,6 +32,7 @@ export const updateTrainerProfile = async ({
     experienceYears: experienceYears !== '' && experienceYears !== null && experienceYears !== undefined ? Number(experienceYears) : null,
     contactNo: contactNo || null,
     availability: availability || null,
+    sessionFee: sessionFee !== '' && sessionFee !== null && sessionFee !== undefined ? Number(sessionFee) : null,
   };
   const { data } = await trainerClient.put('/api/trainers/me', payload);
   return data;

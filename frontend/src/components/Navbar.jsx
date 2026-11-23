@@ -65,10 +65,10 @@ const Navbar = () => {
 
   const navLinks = isTrainer
     ? [
-        { to: '/dashboard', label: 'Clients', icon: Users },
         { to: '/overview', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/tracker', label: 'Tracker', icon: Activity },
         { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+        { to: '/dashboard', label: 'Clients', icon: Users },
         { to: '/community', label: 'Community', icon: BookOpen },
       ]
     : [

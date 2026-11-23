@@ -893,6 +893,17 @@ const Trainers = () => {
                 </span>
               </div>
 
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100">
+                <span className="text-emerald-700 uppercase tracking-wider text-[10px] font-bold block mb-1">
+                  Session Fee
+                </span>
+                <span className="font-extrabold text-emerald-900 text-sm">
+                  {selectedTrainerForDetail.sessionFee != null
+                    ? `₹${Number(selectedTrainerForDetail.sessionFee).toLocaleString('en-IN')} / session`
+                    : 'Contact for price'}
+                </span>
+              </div>
+
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 col-span-2">
                 <span className="text-gray-400 uppercase tracking-wider text-[10px] font-bold block mb-1">
                   Availability & Schedule
@@ -1073,6 +1084,12 @@ const TrainerCard = ({
             <span className="font-medium truncate">{trainer.location || 'Online'}</span>
           </div>
         </div>
+
+        {trainer.sessionFee != null && (
+          <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-sm font-bold">
+            ₹{Number(trainer.sessionFee).toLocaleString('en-IN')} <span className="text-xs font-semibold">/ session</span>
+          </div>
+        )}
 
         {trainer.availability && (
           <p className="text-xs text-gray-500 line-clamp-1 mb-4 flex items-center gap-1">

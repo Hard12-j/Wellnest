@@ -44,9 +44,9 @@ const Login = () => {
 
     setLoading(true);
     try {
-      await loginUser({ username: form.username.trim(), password: form.password });
+      const authData = await loginUser({ username: form.username.trim(), password: form.password });
       toast.success('Welcome back! 🌿');
-      navigate('/dashboard', { replace: true });
+      navigate(authData?.user?.role === 'TRAINER' ? '/overview' : '/dashboard', { replace: true });
     } catch (error) {
       const message = extractErrorMessage(error);
       // Check if user is not verified

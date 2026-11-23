@@ -17,6 +17,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     role: 'USER',
+    sessionFee: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,9 @@ const Register = () => {
     } else if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
+    if (form.role === 'TRAINER' && (!form.sessionFee || !Number.isFinite(Number(form.sessionFee)) || Number(form.sessionFee) <= 0)) {
+      newErrors.sessionFee = 'Enter a session fee greater than zero';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -66,6 +70,9 @@ const Register = () => {
         confirmPassword: form.confirmPassword,
         role: form.role,
       });
+      if (form.role === 'TRAINER') {
+        localStorage.setItem('wellnest_trainer_session_fee_draft', form.sessionFee);
+      }
       toast.success('Verification code sent to your email! 📧');
       navigate('/verify-email', { state: { email: form.username.trim() } });
     } catch (error) {
@@ -117,6 +124,23 @@ const Register = () => {
               disabled={loading}
             />
           </div>
+
+          {form.role === 'TRAINER' && (
+            <FormInput
+              label="Session fee (INR)"
+              id="register-session-fee"
+              name="sessionFee"
+              type="number"
+              min="0.01"
+              step="0.01"
+              autoComplete="off"
+              placeholder="e.g. 500"
+              value={form.sessionFee}
+              onChange={handleChange}
+              error={errors.sessionFee}
+              disabled={loading}
+            />
+          )}
 
           <FormInput
             label="Email address"

@@ -1,6 +1,7 @@
 package com.wellnest.trainer.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "trainer_profiles")
@@ -18,6 +19,8 @@ public class TrainerProfile {
     private Integer experienceYears;
     private String contactNo;
     private String availability;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal sessionFee;
 
     @Column(nullable = false)
     private boolean verified = false;    // set by admin later
@@ -39,6 +42,8 @@ public class TrainerProfile {
     public void setContactNo(String contactNo) { this.contactNo = contactNo; }
     public String getAvailability() { return availability; }
     public void setAvailability(String availability) { this.availability = availability; }
+    public BigDecimal getSessionFee() { return sessionFee; }
+    public void setSessionFee(BigDecimal sessionFee) { this.sessionFee = sessionFee; }
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }
 }

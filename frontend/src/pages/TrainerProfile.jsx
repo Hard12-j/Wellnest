@@ -43,6 +43,7 @@ const TrainerProfile = () => {
     experienceYears: '',
     contactNo: '',
     availability: '',
+    sessionFee: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -63,6 +64,7 @@ const TrainerProfile = () => {
             experienceYears: data.experienceYears !== null && data.experienceYears !== undefined ? String(data.experienceYears) : '',
             contactNo: data.contactNo || '',
             availability: data.availability || '',
+            sessionFee: data.sessionFee != null ? String(data.sessionFee) : (localStorage.getItem('wellnest_trainer_session_fee_draft') || ''),
           });
           setVerified(Boolean(data.verified));
         }
@@ -73,6 +75,7 @@ const TrainerProfile = () => {
             ...prev,
             first: user?.first || '',
             last: user?.last || '',
+            sessionFee: localStorage.getItem('wellnest_trainer_session_fee_draft') || '',
           }));
         }
       } finally {
@@ -109,6 +112,9 @@ const TrainerProfile = () => {
     if (form.contactNo && form.contactNo.length > 20) {
       newErrors.contactNo = 'Contact number cannot exceed 20 characters';
     }
+    if (!form.sessionFee || !Number.isFinite(Number(form.sessionFee)) || Number(form.sessionFee) <= 0) {
+      newErrors.sessionFee = 'Enter a session fee greater than zero';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -122,6 +128,7 @@ const TrainerProfile = () => {
     try {
       const updated = await trainerApi.updateTrainerProfile(form);
       setVerified(Boolean(updated.verified));
+      localStorage.removeItem('wellnest_trainer_session_fee_draft');
       toast.success('Trainer profile updated successfully! 🌟');
       // Optionally sync auth user
       try {
@@ -193,6 +200,11 @@ const TrainerProfile = () => {
                   <span className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5 text-gray-500" />
                     {form.contactNo}
+                  </span>
+                )}
+                {form.sessionFee && (
+                  <span className="flex items-center gap-1 font-semibold text-forest-700">
+                    ₹{Number(form.sessionFee).toLocaleString('en-IN')} / session
                   </span>
                 )}
               </div>
@@ -341,6 +353,26 @@ const TrainerProfile = () => {
             }`}
           />
           {errors.contactNo && <p className="text-xs text-red-500">{errors.contactNo}</p>}
+        </div>
+
+        <div className="space-y-1.5 max-w-md">
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+            Session Fee (INR) *
+          </label>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            name="sessionFee"
+            value={form.sessionFee}
+            onChange={handleChange}
+            placeholder="e.g. 500 per session"
+            className={`w-full px-4 py-2.5 bg-white border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+              errors.sessionFee ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-emerald-500'
+            }`}
+          />
+          {errors.sessionFee && <p className="text-xs text-red-500">{errors.sessionFee}</p>}
+          <p className="text-xs text-gray-500">This price is shown to users browsing your trainer profile.</p>
         </div>
 
         {/* Structured Availability Schedule Picker (Predefined format: Day Range & Time Range) */}

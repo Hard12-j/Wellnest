@@ -123,8 +123,8 @@ const AppRoutes = () => {
       />
 
       {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to={isTrainer ? "/overview" : "/dashboard"} replace />} />
+      <Route path="*" element={<Navigate to={isTrainer ? "/overview" : "/dashboard"} replace />} />
     </Routes>
   );
 };
