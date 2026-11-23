@@ -42,6 +42,20 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/overview"
+        element={
+          <ProtectedRoute>
+            {isTrainer ? (
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
@@ -55,13 +69,9 @@ const AppRoutes = () => {
         path="/tracker"
         element={
           <ProtectedRoute>
-            {isTrainer ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <AppLayout>
-                <Tracker />
-              </AppLayout>
-            )}
+            <AppLayout>
+              <Tracker />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -69,13 +79,9 @@ const AppRoutes = () => {
         path="/analytics"
         element={
           <ProtectedRoute>
-            {isTrainer ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <AppLayout>
-                <Analytics />
-              </AppLayout>
-            )}
+            <AppLayout>
+              <Analytics />
+            </AppLayout>
           </ProtectedRoute>
         }
       />

@@ -65,7 +65,10 @@ const Navbar = () => {
 
   const navLinks = isTrainer
     ? [
-        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/dashboard', label: 'Clients', icon: Users },
+        { to: '/overview', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/tracker', label: 'Tracker', icon: Activity },
+        { to: '/analytics', label: 'Analytics', icon: BarChart3 },
         { to: '/community', label: 'Community', icon: BookOpen },
       ]
     : [
@@ -288,7 +291,7 @@ const Navbar = () => {
       <>
         {chatWidgetOpen ? (
           <section
-            className="fixed bottom-20 left-4 z-[60] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+            className="fixed bottom-20 right-4 z-[60] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
             style={{ width: 'min(860px, calc(100vw - 2rem))', height: 'min(680px, calc(100vh - 7rem))' }}
             aria-label="Chat window"
           >
@@ -314,7 +317,7 @@ const Navbar = () => {
           onClick={() => setChatWidgetOpen((open) => !open)}
           aria-label={unreadCount > 0 ? `Open chat, ${unreadCount} unread messages` : chatWidgetOpen ? 'Close chat' : 'Open chat'}
           aria-expanded={chatWidgetOpen}
-          className="fixed bottom-5 left-5 z-[60] w-14 h-14 rounded-full bg-forest-600 hover:bg-forest-700 text-white shadow-xl shadow-forest-900/20 flex items-center justify-center transition-all hover:scale-105"
+          className="fixed bottom-5 right-5 z-[60] w-14 h-14 rounded-full bg-forest-600 hover:bg-forest-700 text-white shadow-xl shadow-forest-900/20 flex items-center justify-center transition-all hover:scale-105"
         >
           {chatWidgetOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
           {unreadCount > 0 && !chatWidgetOpen ? <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white">{unreadCount > 99 ? '99+' : unreadCount}</span> : null}
