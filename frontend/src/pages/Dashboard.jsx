@@ -20,6 +20,9 @@ import {
   Calendar,
   Users,
   BookOpen,
+  Footprints,
+  Lock,
+  Smartphone,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -36,8 +39,21 @@ const Dashboard = () => {
   const [goalProgress, setGoalProgress] = useState(null);
   const [bmiData, setBmiData] = useState(null);
   const [insights, setInsights] = useState([]);
+  const [stepsToday, setStepsToday] = useState(0);
 
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // Parse steps from Health Connect-synced workout notes
+  const extractStepsFromLog = (log) => {
+    if (!log?.workouts) return 0;
+    for (const w of log.workouts) {
+      if (w.notes?.includes('source:healthconnect')) {
+        const match = w.notes.match(/([\d,]+)\s*steps/i);
+        if (match) return parseInt(match[1].replace(/,/g, ''), 10);
+      }
+    }
+    return 0;
+  };
 
   useEffect(() => {
     let active = true;
@@ -57,6 +73,7 @@ const Dashboard = () => {
           if (goalRes.status === 'fulfilled') setGoalProgress(goalRes.value);
           if (bmiRes.status === 'fulfilled') setBmiData(bmiRes.value);
           if (insightsRes.status === 'fulfilled') setInsights(insightsRes.value?.insights || []);
+          if (dailyRes.status === 'fulfilled') setStepsToday(extractStepsFromLog(dailyRes.value));
         }
       } catch {
         // Silently tolerate if microservices are cold starting
@@ -277,6 +294,69 @@ const Dashboard = () => {
             </p>
           </div>
         </div>
+
+        {/* Steps Card (full-width row, Health Connect powered) */}
+        {stepsToday > 0 ? (
+          <div className="card p-5 border border-forest-100 bg-gradient-to-r from-forest-50/60 to-emerald-50/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-2xl bg-forest-100 text-forest-600 flex items-center justify-center flex-shrink-0">
+                  <Footprints className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                    Steps Today · Health Connect
+                  </p>
+                  <p className="text-2xl font-extrabold text-gray-900">
+                    {stepsToday.toLocaleString()}{' '}
+                    <span className="text-sm font-normal text-gray-400">/ 10,000</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-xs font-semibold text-gray-600 flex-wrap">
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-white rounded-xl border border-gray-100 shadow-sm">
+                  📍 {(stepsToday * 0.00076).toFixed(2)} km
+                </span>
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-white rounded-xl border border-gray-100 shadow-sm">
+                  🔥 {Math.round(stepsToday * 0.04)} kcal
+                </span>
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-white rounded-xl border border-gray-100 shadow-sm">
+                  ⏱ {Math.round(stepsToday / 100)} min active
+                </span>
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="w-full bg-forest-100 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-forest-500 h-full rounded-full transition-all"
+                  style={{ width: `${Math.min(100, Math.round((stepsToday / 10000) * 100))}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">
+                {Math.round((stepsToday / 10000) * 100)}% of daily goal · synced via WellNest mobile
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="card p-5 border border-dashed border-gray-200 bg-gray-50/50 opacity-80">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                  <Footprints className="w-3.5 h-3.5" /> Steps · Health Connect
+                </p>
+                <p className="text-sm font-semibold text-gray-500">
+                  Install &amp; connect the WellNest mobile app with Health Connect to track your steps here.
+                </p>
+              </div>
+              <div className="ml-auto hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-gray-400 px-3 py-1.5 bg-white rounded-xl border border-gray-200">
+                <Smartphone className="w-3.5 h-3.5" /> Mobile Only
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main 2-column features showcase */}

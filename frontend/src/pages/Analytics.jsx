@@ -17,9 +17,15 @@ import {
   ArrowRight,
   Target,
   RefreshCw,
+  Footprints,
+  Lock,
+  Smartphone,
+  MapPin,
+  Timer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as analyticsApi from '../api/analyticsApi';
+import * as trackerApi from '../api/trackerApi';
 import {
   CaloriesChart,
   WorkoutChart,
@@ -210,11 +216,10 @@ const Analytics = () => {
             {insights.map((ins, idx) => (
               <div
                 key={idx}
-                className={`p-4 rounded-2xl border flex items-start gap-3 text-xs leading-relaxed ${
-                  ins.severity === 'WARNING'
+                className={`p-4 rounded-2xl border flex items-start gap-3 text-xs leading-relaxed ${ins.severity === 'WARNING'
                     ? 'bg-amber-50/80 border-amber-200 text-amber-900'
                     : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                }`}
+                  }`}
               >
                 {ins.severity === 'WARNING' ? (
                   <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
