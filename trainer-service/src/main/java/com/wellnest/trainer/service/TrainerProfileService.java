@@ -48,7 +48,7 @@ public class TrainerProfileService {
         t.setExperienceYears(r.experienceYears());
         t.setContactNo(r.contactNo());
         t.setAvailability(r.availability());
-        t.setSessionFee(r.sessionFee());
+        t.setMonthlyFee(r.monthlyFee());
         return TrainerProfileResponse.from(trainers.save(t), null);
     }
 

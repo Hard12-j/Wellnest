@@ -43,7 +43,7 @@ const TrainerProfile = () => {
     experienceYears: '',
     contactNo: '',
     availability: '',
-    sessionFee: '',
+    monthlyFee: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -64,7 +64,7 @@ const TrainerProfile = () => {
             experienceYears: data.experienceYears !== null && data.experienceYears !== undefined ? String(data.experienceYears) : '',
             contactNo: data.contactNo || '',
             availability: data.availability || '',
-            sessionFee: data.sessionFee != null ? String(data.sessionFee) : (localStorage.getItem('wellnest_trainer_session_fee_draft') || ''),
+            monthlyFee: data.monthlyFee != null ? String(data.monthlyFee) : data.sessionFee != null ? String(data.sessionFee) : (localStorage.getItem('wellnest_trainer_monthly_fee_draft') || localStorage.getItem('wellnest_trainer_session_fee_draft') || ''),
           });
           setVerified(Boolean(data.verified));
         }
@@ -75,7 +75,7 @@ const TrainerProfile = () => {
             ...prev,
             first: user?.first || '',
             last: user?.last || '',
-            sessionFee: localStorage.getItem('wellnest_trainer_session_fee_draft') || '',
+            monthlyFee: localStorage.getItem('wellnest_trainer_monthly_fee_draft') || localStorage.getItem('wellnest_trainer_session_fee_draft') || '',
           }));
         }
       } finally {
@@ -112,8 +112,8 @@ const TrainerProfile = () => {
     if (form.contactNo && form.contactNo.length > 20) {
       newErrors.contactNo = 'Contact number cannot exceed 20 characters';
     }
-    if (!form.sessionFee || !Number.isFinite(Number(form.sessionFee)) || Number(form.sessionFee) <= 0) {
-      newErrors.sessionFee = 'Enter a session fee greater than zero';
+    if (!form.monthlyFee || !Number.isFinite(Number(form.monthlyFee)) || Number(form.monthlyFee) <= 0) {
+      newErrors.monthlyFee = 'Enter a monthly coaching fee greater than zero';
     }
 
     setErrors(newErrors);
@@ -128,6 +128,7 @@ const TrainerProfile = () => {
     try {
       const updated = await trainerApi.updateTrainerProfile(form);
       setVerified(Boolean(updated.verified));
+      localStorage.removeItem('wellnest_trainer_monthly_fee_draft');
       localStorage.removeItem('wellnest_trainer_session_fee_draft');
       toast.success('Trainer profile updated successfully! 🌟');
       // Optionally sync auth user
@@ -202,9 +203,9 @@ const TrainerProfile = () => {
                     {form.contactNo}
                   </span>
                 )}
-                {form.sessionFee && (
+                {form.monthlyFee && (
                   <span className="flex items-center gap-1 font-semibold text-forest-700">
-                    ₹{Number(form.sessionFee).toLocaleString('en-IN')} / session
+                    ₹{Number(form.monthlyFee).toLocaleString('en-IN')} / month
                   </span>
                 )}
               </div>
@@ -357,21 +358,21 @@ const TrainerProfile = () => {
 
         <div className="space-y-1.5 max-w-md">
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-            Session Fee (INR) *
+            Monthly Coaching Fee (INR) *
           </label>
           <input
             type="number"
             min="0.01"
             step="0.01"
-            name="sessionFee"
-            value={form.sessionFee}
+            name="monthlyFee"
+            value={form.monthlyFee}
             onChange={handleChange}
-            placeholder="e.g. 500 per session"
+            placeholder="e.g. 500 per month"
             className={`w-full px-4 py-2.5 bg-white border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-              errors.sessionFee ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-emerald-500'
+              errors.monthlyFee ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-emerald-500'
             }`}
           />
-          {errors.sessionFee && <p className="text-xs text-red-500">{errors.sessionFee}</p>}
+          {errors.monthlyFee && <p className="text-xs text-red-500">{errors.monthlyFee}</p>}
           <p className="text-xs text-gray-500">This price is shown to users browsing your trainer profile.</p>
         </div>
 

@@ -17,7 +17,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     role: 'USER',
-    sessionFee: '',
+    monthlyFee: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -49,8 +49,8 @@ const Register = () => {
     } else if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    if (form.role === 'TRAINER' && (!form.sessionFee || !Number.isFinite(Number(form.sessionFee)) || Number(form.sessionFee) <= 0)) {
-      newErrors.sessionFee = 'Enter a session fee greater than zero';
+    if (form.role === 'TRAINER' && (!form.monthlyFee || !Number.isFinite(Number(form.monthlyFee)) || Number(form.monthlyFee) <= 0)) {
+      newErrors.monthlyFee = 'Enter a monthly coaching fee greater than zero';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -71,7 +71,7 @@ const Register = () => {
         role: form.role,
       });
       if (form.role === 'TRAINER') {
-        localStorage.setItem('wellnest_trainer_session_fee_draft', form.sessionFee);
+        localStorage.setItem('wellnest_trainer_monthly_fee_draft', form.monthlyFee);
       }
       toast.success('Verification code sent to your email! 📧');
       navigate('/verify-email', { state: { email: form.username.trim() } });
@@ -127,17 +127,17 @@ const Register = () => {
 
           {form.role === 'TRAINER' && (
             <FormInput
-              label="Session fee (INR)"
+              label="Monthly coaching fee (INR per month)"
               id="register-session-fee"
-              name="sessionFee"
+              name="monthlyFee"
               type="number"
               min="0.01"
               step="0.01"
               autoComplete="off"
               placeholder="e.g. 500"
-              value={form.sessionFee}
+              value={form.monthlyFee}
               onChange={handleChange}
-              error={errors.sessionFee}
+              error={errors.monthlyFee}
               disabled={loading}
             />
           )}

@@ -19,8 +19,8 @@ public class TrainerProfile {
     private Integer experienceYears;
     private String contactNo;
     private String availability;
-    @Column(precision = 10, scale = 2)
-    private BigDecimal sessionFee;
+    @Column(name = "session_fee", precision = 10, scale = 2)
+    private BigDecimal monthlyFee;
 
     @Column(nullable = false)
     private boolean verified = false;    // set by admin later
@@ -42,8 +42,8 @@ public class TrainerProfile {
     public void setContactNo(String contactNo) { this.contactNo = contactNo; }
     public String getAvailability() { return availability; }
     public void setAvailability(String availability) { this.availability = availability; }
-    public BigDecimal getSessionFee() { return sessionFee; }
-    public void setSessionFee(BigDecimal sessionFee) { this.sessionFee = sessionFee; }
+    public BigDecimal getMonthlyFee() { return monthlyFee; }
+    public void setMonthlyFee(BigDecimal monthlyFee) { this.monthlyFee = monthlyFee; }
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }
 }
